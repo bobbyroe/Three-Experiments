@@ -1,3 +1,3 @@
 Some THREE.js experiments, written in god's scripting language: coffeescript.
 Enjoy!
-[![shot](/z_images/shots/follow.png)]
+[![Followers](/z_images/shots/follow.png)](http://bobbyroe.com/three/followers/v9a/)
