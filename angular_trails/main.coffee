@@ -12,20 +12,27 @@ do ->
     scene = new THREE.Scene()
     camera = new THREE.PerspectiveCamera 60, w.innerWidth / w.innerHeight, 0.1, 10000
     camera.position.z = 200
-    renderer = new THREE.WebGLRenderer()
+    renderer = new THREE.WebGLRenderer preserveDrawingBuffer: true
     log = console.log.bind console
+
+    ctrls =
+        auto_clear: true
+
+    w.ctrls = ctrls
+    gui = new dat.GUI()
+    gui.add ctrls, 'auto_clear'
 
     renderer.setSize w.innerWidth, w.innerHeight 
     d.body.appendChild renderer.domElement
 
     getWireMat = (col = 0xFFFF00) ->
-        new THREE.MeshBasicMaterial color: col, opacity: 1, wireframe: true, wireframeLinewidth: 1
+        new THREE.MeshBasicMaterial color: col, opacity: 0, wireframe: true, wireframeLinewidth: 0, transparent: true
 
     tetra_geo = new THREE.SphereGeometry 0.1, 3, 2
     mouse_mesh = new THREE.Mesh tetra_geo, getWireMat()
     scene.add mouse_mesh
 
-    getLineMat = (col) ->
+    getLineMat = (col = 0xFF0000) ->
         new THREE.LineBasicMaterial color: col, linewidth: 2
 
     getVertices = ->
@@ -67,7 +74,7 @@ do ->
             y: pos.y
             z: 0
         geo.init_pos = geo.position
-        geo.scale = x: 0.45, y: 0.45, z: 0.45
+        geo.scale = x: 0.0001, y: 0.0001, z: 0.0001
 
         is_frozen = false
         im_special = if Math.random() < 0.2 then true else false
@@ -128,7 +135,7 @@ do ->
                 sat = if im_special then i/num_verts else 1 - i/num_verts
 
                 if next_vert? then cur_vert.set next_vert.x, next_vert.y, next_vert.z
-                @line_geo.colors[i].setHSL(hue, sat, 0.6 - i/num_verts)
+                @line_geo.colors[i].setHSL(hue, sat, (1.0 - i/num_verts) * 0.25 + 0.15)
                 i -= 1
 
             @line_geo.verticesNeedUpdate = true
@@ -198,6 +205,7 @@ do ->
         for emtr in emitters
             emtr.update mouse_mesh.position
 
+        renderer.autoClear = ctrls.auto_clear
         renderer.render scene, camera
 
     # begin looping

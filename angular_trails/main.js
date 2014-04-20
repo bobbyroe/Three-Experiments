@@ -3,7 +3,7 @@
     A THREE.js experiment 2014 by http://bobbyroe.com
 */
 (function() {
-  var HALF_PI, camera, d, e, emitter, emitters, getEmitter, getLineColors, getLineMat, getLineVerts, getVertices, getWireMat, head_geo, log, mouse, mouse_mesh, num_emitters, num_verts, onKeyUp, onMouseMove, radius, rand_angle, renderFrame, renderer, scene, tetra_geo, toggleFollow, toggleFreeze, w, windowHalf;
+  var HALF_PI, camera, ctrls, d, e, emitter, emitters, getEmitter, getLineColors, getLineMat, getLineVerts, getVertices, getWireMat, gui, head_geo, log, mouse, mouse_mesh, num_emitters, num_verts, onKeyUp, onMouseMove, radius, rand_angle, renderFrame, renderer, scene, tetra_geo, toggleFollow, toggleFreeze, w, windowHalf;
 
   d = document;
   w = window;
@@ -19,8 +19,16 @@
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(60, w.innerWidth / w.innerHeight, 0.1, 10000);
   camera.position.z = 200;
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({
+    preserveDrawingBuffer: true
+  });
   log = console.log.bind(console);
+  ctrls = {
+    auto_clear: true
+  };
+  w.ctrls = ctrls;
+  gui = new dat.GUI();
+  gui.add(ctrls, 'auto_clear');
   renderer.setSize(w.innerWidth, w.innerHeight);
   d.body.appendChild(renderer.domElement);
   getWireMat = function(col) {
@@ -29,15 +37,19 @@
     }
     return new THREE.MeshBasicMaterial({
       color: col,
-      opacity: 1,
+      opacity: 0,
       wireframe: true,
-      wireframeLinewidth: 1
+      wireframeLinewidth: 0,
+      transparent: true
     });
   };
   tetra_geo = new THREE.SphereGeometry(0.1, 3, 2);
   mouse_mesh = new THREE.Mesh(tetra_geo, getWireMat());
   scene.add(mouse_mesh);
   getLineMat = function(col) {
+    if (col == null) {
+      col = 0xFF0000;
+    }
     return new THREE.LineBasicMaterial({
       color: col,
       linewidth: 2
@@ -91,9 +103,9 @@
     };
     geo.init_pos = geo.position;
     geo.scale = {
-      x: 0.45,
-      y: 0.45,
-      z: 0.45
+      x: 0.0001,
+      y: 0.0001,
+      z: 0.0001
     };
     is_frozen = false;
     im_special = Math.random() < 0.2 ? true : false;
@@ -164,7 +176,7 @@
         if (next_vert != null) {
           cur_vert.set(next_vert.x, next_vert.y, next_vert.z);
         }
-        this.line_geo.colors[i].setHSL(hue, sat, 0.6 - i / num_verts);
+        this.line_geo.colors[i].setHSL(hue, sat, (1.0 - i / num_verts) * 0.25 + 0.15);
         i -= 1;
       }
       this.line_geo.verticesNeedUpdate = true;
@@ -242,9 +254,14 @@
       emtr = emitters[_i];
       emtr.update(mouse_mesh.position);
     }
+    renderer.autoClear = ctrls.auto_clear;
     return renderer.render(scene, camera);
   };
   renderFrame();
   d.addEventListener('mousemove', onMouseMove, false);
   return d.addEventListener('keyup', onKeyUp, false);
 })();
+
+/*
+//@ sourceMappingURL=main.map
+*/
