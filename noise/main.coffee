@@ -1,3 +1,6 @@
+###
+    A THREE.js experiment 2014 by http://bobbyroe.com
+###
 log = console.log.bind console
 do ->
     SCREEN_HEIGHT = window.innerHeight

@@ -3,7 +3,7 @@
     A THREE.js experiment 2014 by http://bobbyroe.com
 */
 (function() {
-  var ball_geo, bouncelight, box_mat, box_mesh, camera, color_mat, controls, counter, ctrls, cube_geo, geos, getGreyMat, getMesh, getRefractoBlurredMat, getRefractoMat, getWireMat, gui, head_geo, i, init, loader, log, mats, max_dist, mesh_scale, objects, onKeyUp, postprocessing, preloadAssets, refracto_mat, renderFrame, renderer, rimlight, scene, shader, sunlight, tetra_geo, texture_blurred_cube, texture_cube, w;
+  var ball_geo, bouncelight, box_mat, box_mesh, camera, color_mat, controls, counter, ctrls, cube_geo, geos, getGreyMat, getMesh, getPhongMat, getRefractoBlurredMat, getRefractoMat, getWireMat, gold, gold_mat, gui, head_geo, i, init, loader, log, max_dist, mesh_scale, objects, onKeyUp, parent, postprocessing, preloadAssets, refracto_mat, renderFrame, renderer, rimlight, scene, shader, sunlight, tetra_geo, texture_blurred_cube, texture_cube, w;
 
   w = window;
   scene = new THREE.Scene();
@@ -18,11 +18,13 @@
   log = console.log.bind(console);
   counter = 0;
   ctrls = {
-    use_turntable: true
+    use_turntable: true,
+    glass_material: false
   };
   w.ctrls = ctrls;
   gui = new dat.GUI();
   gui.add(ctrls, 'use_turntable');
+  gold = gui.add(ctrls, 'glass_material');
   controls.rotateSpeed = 1.0;
   controls.zoomSpeed = 1.2;
   controls.panSpeed = 0.8;
@@ -81,24 +83,57 @@
       refractionRatio: 0.95
     });
   };
+  getPhongMat = function() {
+    var format, map_height, options, path, phong_texture_cube, urls;
+
+    path = "images/";
+    format = '.jpg';
+    urls = [path + 'disturb3a' + format, path + 'disturb3a' + format, path + 'disturb3a' + format, path + 'disturb3a' + format, path + 'disturb3a' + format, path + 'disturb3a' + format];
+    phong_texture_cube = THREE.ImageUtils.loadTextureCube(urls);
+    map_height = THREE.ImageUtils.loadTexture("images/bump.jpg");
+    map_height.anisotropy = 4;
+    map_height.repeat.set(0.998, 0.998);
+    map_height.offset.set(0.001, 0.001);
+    map_height.wrapS = map_height.wrapT = THREE.RepeatWrapping;
+    map_height.format = THREE.RGBFormat;
+    options = {
+      envMap: phong_texture_cube,
+      bumpMap: map_height,
+      color: 0xFFFFFF,
+      specular: 0xFFFFFF,
+      shininess: 30,
+      bumpScale: 1.5,
+      emissive: 0x552200,
+      shading: THREE.SmoothShading
+    };
+    return new THREE.MeshPhongMaterial(options);
+  };
   refracto_mat = getRefractoBlurredMat();
   color_mat = getRefractoMat();
+  gold_mat = getPhongMat();
   geos = [cube_geo, tetra_geo];
-  mats = [getGreyMat(), new THREE.MeshNormalMaterial(), getWireMat(0x00ff00)];
   objects = [];
+  parent = new THREE.Object3D();
+  scene.add(parent);
   sunlight = new THREE.DirectionalLight(0xffffdd, 1.0);
-  bouncelight = new THREE.DirectionalLight(0xddffff, 0.2);
-  rimlight = new THREE.DirectionalLight(0xddffff, 2.0);
+  bouncelight = new THREE.DirectionalLight(0xddffff, 0.6);
+  rimlight = new THREE.DirectionalLight(0xddffff, 1.2);
+  sunlight.position.set(1, 1, 1);
+  bouncelight.position.set(-1, -1, -1);
+  rimlight.position.set(0, 0.5, -1);
+  scene.add(rimlight);
+  scene.add(sunlight);
+  scene.add(bouncelight);
   max_dist = 6000;
   mesh_scale = 400;
   i = 0;
   getMesh = function(n) {
-    var anim, geometry, getGridPosition, getPosition, goal_pos, inc, material, mesh, move_rate, obj, rand, rate;
+    var geometry, getGridPosition, getPosition, goal_pos, inc, material, mesh, move_rate, obj, rand, rate;
 
     rand = Math.random() * 100;
     inc = Math.floor(Math.random() * geos.length);
     geometry = head_geo;
-    material = refracto_mat;
+    material = gold_mat;
     mesh = new THREE.Mesh(geometry, material);
     getPosition = function() {
       return {
@@ -123,21 +158,9 @@
     rate = Math.random() * 0.03 + 0.0;
     move_rate = Math.random() * 0.03 + 0.005;
     goal_pos = mesh.position;
-    anim = function() {
-      var randa;
-
-      randa = Math.random() * 1000;
-      if (randa < 1) {
-        goal_pos = getPosition();
-      }
-      this.mesh.rotation.y += rate;
-      this.mesh.position.x -= (this.mesh.position.x - goal_pos.x) * move_rate;
-      this.mesh.position.y -= (this.mesh.position.y - goal_pos.y) * move_rate;
-      return this.mesh.position.z -= (this.mesh.position.z - goal_pos.z) * move_rate;
-    };
+    parent.add(mesh);
     return obj = {
-      mesh: mesh,
-      anim: anim
+      mesh: mesh
     };
   };
   init = function() {
@@ -146,7 +169,6 @@
     while (i < 1) {
       obj = getMesh(i);
       objects.push(obj);
-      scene.add(obj.mesh);
       i += 1;
     }
     renderFrame();
@@ -168,25 +190,36 @@
   onKeyUp = function(evnt) {
     console.log(evt.keyCode);
   };
+  gold.onChange(function(use_glass_shader) {
+    var obj;
+
+    obj = objects[0];
+    log(obj);
+    if (use_glass_shader === false) {
+      return obj.mesh.material = gold_mat;
+    } else {
+      return obj.mesh.material = refracto_mat;
+    }
+  });
   renderFrame = function() {
     requestAnimationFrame(renderFrame);
     if (ctrls.use_turntable === true) {
-      counter += 0.002;
-      camera.position.z -= (camera.position.z - 2000 * Math.sin(counter)) * 0.01;
-      camera.position.x -= (camera.position.x - 2000 * Math.cos(counter)) * 0.01;
-      camera.lookAt(scene.position);
-    } else {
-      controls.update();
+      counter += 0.004;
+      parent.rotation.y = counter * -1;
     }
+    controls.update();
     renderer.clear();
     return renderer.render(scene, camera);
   };
   preloadAssets = function() {
-    loader.load('../z_objs/asaro_03.obj', function(obj) {
-      log(obj);
+    loader.load('../z_objs/asaro_04a.obj', function(obj) {
       head_geo = obj.children[0].geometry;
       init();
     });
   };
   return preloadAssets();
 })();
+
+/*
+//@ sourceMappingURL=main.map
+*/

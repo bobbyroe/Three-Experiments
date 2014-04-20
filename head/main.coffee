@@ -15,10 +15,12 @@ do ->
 
 	ctrls =
 		use_turntable: true
+		glass_material: false
 
 	w.ctrls = ctrls
 	gui = new dat.GUI()
 	gui.add ctrls, 'use_turntable'
+	gold = gui.add ctrls, 'glass_material'
 
 	controls.rotateSpeed = 1.0
 	controls.zoomSpeed = 1.2
@@ -69,18 +71,62 @@ do ->
 		texture_blurred_cube = THREE.ImageUtils.loadTextureCube burls, new THREE.CubeRefractionMapping()
 		new THREE.MeshBasicMaterial color: 0xFFFFFF, envMap: texture_blurred_cube, refractionRatio: 0.95
 
+	getPhongMat = ->
+
+		# environment reflection map
+		path = "images/"
+		format = '.jpg'
+		urls = [
+			path + 'disturb3a' + format, path + 'disturb3a' + format,
+			path + 'disturb3a' + format, path + 'disturb3a' + format,
+			path + 'disturb3a' + format, path + 'disturb3a' + format
+		]
+		phong_texture_cube = THREE.ImageUtils.loadTextureCube( urls )
+
+		# bump map
+		map_height = THREE.ImageUtils.loadTexture( "images/bump.jpg" );
+
+		map_height.anisotropy = 4
+		map_height.repeat.set 0.998, 0.998
+		map_height.offset.set 0.001, 0.001
+
+		map_height.wrapS = map_height.wrapT = THREE.RepeatWrapping
+		map_height.format = THREE.RGBFormat
+
+		options =
+			envMap: phong_texture_cube
+			bumpMap: map_height
+			# ambient: 0xFF0000
+			color: 0xFFFFFF
+			specular: 0xFFFFFF
+			shininess: 30
+			bumpScale: 1.5
+			emissive: 0x552200
+			shading: THREE.SmoothShading
+
+		new THREE.MeshPhongMaterial options
+
 	refracto_mat = getRefractoBlurredMat()
 	color_mat = getRefractoMat()
+	gold_mat = getPhongMat()
 
 	geos = [cube_geo, tetra_geo]
-	mats = [getGreyMat(), new THREE.MeshNormalMaterial(), getWireMat(0x00ff00)]
 	
 	objects = []
+	parent = new THREE.Object3D()
+	scene.add parent
 
 	# lights
 	sunlight = new THREE.DirectionalLight 0xffffdd, 1.0
-	bouncelight = new THREE.DirectionalLight 0xddffff, 0.2
-	rimlight = new THREE.DirectionalLight 0xddffff, 2.0
+	bouncelight = new THREE.DirectionalLight 0xddffff, 0.6
+	rimlight = new THREE.DirectionalLight 0xddffff, 1.2
+	sunlight.position.set 1, 1, 1 
+	bouncelight.position.set -1, -1, -1 
+	rimlight.position.set 0, 0.5, -1 
+	scene.add rimlight
+	scene.add sunlight
+	scene.add bouncelight
+
 	max_dist = 6000
 	mesh_scale = 400
 	i = 0
@@ -89,7 +135,7 @@ do ->
 		rand = Math.random() * 100
 		inc = Math.floor Math.random() * geos.length
 		geometry = head_geo
-		material = refracto_mat
+		material = gold_mat # refracto_mat
 		mesh = new THREE.Mesh(geometry, material)
 
 		getPosition = ->
@@ -108,24 +154,16 @@ do ->
 		rate = Math.random() * 0.03 + 0.0
 		move_rate = Math.random() * 0.03 + 0.005
 		goal_pos = mesh.position
-		anim = ->
-			randa = Math.random() * 1000
-			if randa < 1 then goal_pos = do getPosition
-			@mesh.rotation.y += rate
-			@mesh.position.x -= (@mesh.position.x - goal_pos.x) * move_rate
-			@mesh.position.y -= (@mesh.position.y - goal_pos.y) * move_rate
-			@mesh.position.z -= (@mesh.position.z - goal_pos.z) * move_rate
+
+		parent.add mesh
 
 		obj = 
 			mesh: mesh
-			anim: anim
 
 	init = ->
 		while i < 1
 			obj = getMesh i
-
 			objects.push obj
-			scene.add obj.mesh
 			i += 1
 		renderFrame()
 		return
@@ -151,23 +189,29 @@ do ->
 		console.log evt.keyCode
 		return
 
+	# Fires on every change, drag, keypress, etc.
+	gold.onChange (use_glass_shader) ->
+		obj = objects[0]
+		log obj
+		if use_glass_shader is false
+			obj.mesh.material = gold_mat
+		else 
+			obj.mesh.material = refracto_mat
+
 	renderFrame = ->
 		requestAnimationFrame renderFrame
 
 		if ctrls.use_turntable is true
-			counter += 0.002
-			camera.position.z -= (camera.position.z - 2000 * Math.sin(counter) ) * 0.01
-			camera.position.x -= (camera.position.x - 2000 * Math.cos(counter) ) * 0.01
-			camera.lookAt(scene.position)
-		else
-			controls.update()
+			counter += 0.004
+			parent.rotation.y = counter * -1
+		
+		controls.update()
 
 		renderer.clear()
 		renderer.render scene, camera 
 
 	preloadAssets = ->
-		loader.load '../z_objs/asaro_03.obj', (obj) ->
-			log obj
+		loader.load '../z_objs/asaro_04a.obj', (obj) ->
 			head_geo = obj.children[0].geometry
 			init()
 			return

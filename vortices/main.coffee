@@ -1,3 +1,6 @@
+###
+    A THREE.js experiment 2014 by http://bobbyroe.com
+###
 do ->
 
     scene = new THREE.Scene()

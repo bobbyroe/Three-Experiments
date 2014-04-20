@@ -1,3 +1,6 @@
+###
+    A THREE.js experiment 2014 by http://bobbyroe.com
+###
 do ->
 
     scene = new THREE.Scene()
@@ -15,6 +18,12 @@ do ->
     controls.dynamicDampingFactor = 0.3
     controls.keys = [ 65, 83, 68 ]
     camera_uses_path = true
+
+    ctrls =
+        flat_shading: false
+
+    # gui = new dat.GUI()
+    # flat = gui.add ctrls, 'flat_shading'
 
     renderer = new THREE.WebGLRenderer()
     # renderer.shadowMapEnabled = true
@@ -56,17 +65,27 @@ do ->
                                         # path, segments, radius, radius_segments, closed, debug
     tube_geo = new THREE.TubeGeometry extrudeSettings.extrudePath, 222, 0.65, 8, false, true
 
+    tube_geo.vertices.forEach (vert) ->
+        vert.x += Math.random() * 0.3 - 0.15
+        vert.y += Math.random() * 0.3 - 0.15
+        vert.z += Math.random() * 0.3 - 0.15
+        return
+    tube_geo.computeFaceNormals()
+
     lambert_mat = new THREE.MeshLambertMaterial color: 0xFFFFFF, side: THREE.DoubleSide, shading:  THREE.SmoothShading
-    flat_mat = new THREE.MeshLambertMaterial color: 0xFFFFFF, side: THREE.BackSide, shading:  THREE.FlatShading
+    flat_mat = new THREE.MeshLambertMaterial color: 0x0099FF, emissive: 0x001122, side: THREE.BackSide, shading:  THREE.FlatShading, visible: false
+    # flat_mat = new THREE.MeshLambertMaterial color: 0xFFFFFF, side: THREE.BackSide, shading:  THREE.FlatShading
     wire_mat = new THREE.MeshBasicMaterial color: 0x009900, wireframe: true, opacity: 0.4, transparent: true, wireframeLinewidth: 2
     debug_mat = new THREE.MeshBasicMaterial color: 0xFF9900, wireframe: true, opacity: 1.0, transparent: true, wireframeLinewidth: 2
     tube_mats_array = [ lambert_mat, wire_mat ] 
 
     # tube = new THREE.Mesh tube_geo, debug_mat # new THREE.SceneUtils.createMultiMaterialObject  tube_geo, tube_mats_array
     tube = new THREE.SceneUtils.createMultiMaterialObject  tube_geo, tube_mats_array
+    tube_flat = new THREE.Mesh tube_geo, flat_mat
     # tube.castShadow = true
-    tube.receiveShadow = true
+    # tube.receiveShadow = true
     scene.add tube
+    scene.add tube_flat
 
 
     # debug
@@ -194,6 +213,13 @@ do ->
         log 'zap!'
         is_zapping = frealz
         return
+
+    # DAT.GUI Fires on every change, drag, keypress, etc.   
+    # flat.onChange (use_flat_mat) ->
+    #     log tube.material, tube_flat.material
+    #     tube.material.visible = not use_flat_mat
+    #     tube_flat.material.visible = use_flat_mat
+       
 
     pos = new THREE.Vector3(); point = new THREE.Vector3(); target = new THREE.Vector3()
     eye_pos = new THREE.Vector3(); eye_point = new THREE.Vector3(); eye_target = new THREE.Vector3(); 
