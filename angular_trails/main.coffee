@@ -23,7 +23,10 @@ do ->
     gui.add ctrls, 'auto_clear'
 
     renderer.setSize w.innerWidth, w.innerHeight 
-    d.body.appendChild renderer.domElement
+    info_panel = document.querySelector '#info'
+    panel = renderer.domElement
+    panel.classList.add 'panel'
+    document.body.insertBefore panel, info_panel
 
     getWireMat = (col = 0xFFFF00) ->
         new THREE.MeshBasicMaterial color: col, opacity: 0, wireframe: true, wireframeLinewidth: 0, transparent: true
@@ -210,6 +213,33 @@ do ->
 
     # begin looping
     renderFrame()
+
+    #
+
+    d = document
+    showInfoPanel = ->
+        panel.classList.add 'scooched_right'
+        info_panel.classList.add 'open'
+        is_highlighing_points = false
+
+    hideInfoPanel = ->
+        panel.classList.remove 'scooched_right'
+        info_panel.classList.remove 'open'
+        is_highlighing_points = true
+
+    toggleInfoPanel = ->
+        if info_panel.classList.contains 'open'
+            hideInfoPanel()
+        else 
+            showInfoPanel()
+
+    clicked = (evt) ->
+        if evt.target.id is 'nub'
+            toggleInfoPanel()
+        if evt.target.id is ''
+            hideInfoPanel()
+
+    d.addEventListener 'click', clicked
     d.addEventListener 'mousemove', onMouseMove, false
     d.addEventListener 'keyup', onKeyUp, false
     

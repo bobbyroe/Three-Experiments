@@ -1,0 +1,83 @@
+/*---------------------------------------------------
+ * SASS Elements  
+ * ---------------------------------------------------
+ * Based on A set of useful LESS mixins
+ * More info at: http://lesselements.com
+ * --------------------------------------------------- */
+body {
+  background-color: black;
+  font-size: 14px;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #e0e0e0; }
+
+canvas {
+  width: 100%;
+  height: 100%; }
+
+* {
+  -ms-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box; }
+
+#title {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-weight: bold;
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.2); }
+
+a {
+  color: #0099ff;
+  text-decoration: none; }
+  a:hover {
+    color: #00ccf0; }
+
+#info {
+  -webkit-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  -moz-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  -o-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  position: absolute;
+  padding: 20px;
+  top: 0px;
+  width: 300px;
+  height: 100%;
+  background-color: #404040;
+  color: #a0a0a0; }
+  #info h4 {
+    color: #e0e0e0;
+    font-weight: normal; }
+  #info.closed {
+    left: -300px; }
+  #info.open {
+    left: 0px; }
+
+#nub {
+  position: absolute;
+  padding: 15px 10px 10px;
+  right: -50px;
+  top: 0;
+  width: 50px;
+  height: 50px;
+  background-color: #606060;
+  cursor: pointer; }
+  #nub:hover {
+    background-color: #404040;
+    color: #00ccff; }
+
+.panel {
+  -webkit-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  -moz-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  -o-transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; }
+  .panel.scooched_right {
+    left: 300px; }

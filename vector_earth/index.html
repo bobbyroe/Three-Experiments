@@ -3,17 +3,19 @@
 <head>
 	<meta charset='UTF-8'/>
 	<title>:D</title> 
-	<style type="text/css">
-		body {
-			background-color: #000;
-		}
-		canvas { 
-			width: 100%; 
-			height: 100%; 
-		}
-	</style> 
+	<link rel="stylesheet" href="style/style.css">
 </head> 
-<body> 
+<body>
+	<div id="info" class="closed">
+		<h4>Inspired by the movie <a href="http://www.imdb.com/title/tt0086567/?ref_=nv_sr_1" target="_blank">WarGames</a></h4>
+		<br>
+		I searched and searched for simple polygon data for the earth, 
+		but couldn't find any. So I created my own from a grayscale map with Illustrator and Maya.<br>
+		<br>
+		See the <a href="https://github.com/bobbyroe/Three-Experiments/tree/master/vector_earth">source on github</a><br>
+		<div id="nub">info</div>
+	</div>
+	<div id="title">Tunnels</div>
 	<script src="../z_libs/three.min.js"></script>
 	<script src="../z_libs/TrackballControls.js"></script>
 	<script src="world_all.js"></script>

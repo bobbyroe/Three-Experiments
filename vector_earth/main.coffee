@@ -32,7 +32,10 @@ do ->
 
     # scene.fog = new THREE.FogExp2 0x000000, 0.0025
     renderer.setSize window.innerWidth, window.innerHeight 
-    document.body.appendChild renderer.domElement
+    info_panel = document.querySelector '#info'
+    panel = renderer.domElement
+    panel.classList.add 'panel'
+    document.body.insertBefore panel, info_panel
 
     getWireMat = (col = 0x660000) ->
         new THREE.MeshBasicMaterial color: col, opacity: 1, wireframe: true, wireframeLinewidth: 2
@@ -132,6 +135,31 @@ do ->
         renderer.render scene, camera
 
     renderFrame()
-    # d.addEventListener( 'mousemove', onMouseMove, false )
+
+    #
+    
+    showInfoPanel = ->
+        panel.classList.add 'scooched_right'
+        info_panel.classList.add 'open'
+        is_highlighing_points = false
+
+    hideInfoPanel = ->
+        panel.classList.remove 'scooched_right'
+        info_panel.classList.remove 'open'
+        is_highlighing_points = true
+
+    toggleInfoPanel = ->
+        if info_panel.classList.contains 'open'
+            hideInfoPanel()
+        else 
+            showInfoPanel()
+
+    clicked = (evt) ->
+        if evt.target.id is 'nub'
+            toggleInfoPanel()
+        if evt.target.id is ''
+            hideInfoPanel()
+
+    d.addEventListener 'click', clicked
     d.addEventListener('keyup', onKeyUp, false)
     

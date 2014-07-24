@@ -2,7 +2,7 @@
     A THREE.js experiment 2014 by http://bobbyroe.com
 ###
 do ->
-
+    
     scene = new THREE.Scene()
     camera = new THREE.PerspectiveCamera 60, window.innerWidth/window.innerHeight, 0.1, 1000
     camera.position.z = 40
@@ -38,8 +38,11 @@ do ->
     degToRad = (deg) -> deg * Math.PI / 180
 
     # scene.fog = new THREE.FogExp2 0x000000, 0.09
-    renderer.setSize window.innerWidth, window.innerHeight 
-    document.body.appendChild renderer.domElement
+    renderer.setSize window.innerWidth, window.innerHeight
+    info_panel = document.querySelector '#info'
+    panel = renderer.domElement
+    panel.classList.add 'panel'
+    document.body.insertBefore panel, info_panel
 
     # path
     points = []
@@ -184,8 +187,7 @@ do ->
         return
 
     onClick = (evt) ->
-        fire true
-        return
+        # fire true
 
     onMouseMove = (evt) ->
         mouse_pos = 
@@ -263,6 +265,33 @@ do ->
     
     renderFrame()
 
+    #
+
+    d = document
+    showInfoPanel = ->
+        panel.classList.add 'scooched_right'
+        info_panel.classList.add 'open'
+        is_highlighing_points = false
+
+    hideInfoPanel = ->
+        panel.classList.remove 'scooched_right'
+        info_panel.classList.remove 'open'
+        is_highlighing_points = true
+
+    toggleInfoPanel = ->
+        if info_panel.classList.contains 'open'
+            hideInfoPanel()
+        else 
+            showInfoPanel()
+
+    clicked = (evt) ->
+        if evt.target.id is 'nub'
+            toggleInfoPanel()
+        if evt.target.id is ''
+            hideInfoPanel()
+
+    d.addEventListener 'click', clicked
+
     document.addEventListener 'mousemove', onMouseMove, false
     document.addEventListener 'keyup', onKeyUp, false
-    document.addEventListener 'click', onClick, false
+    # document.addEventListener 'click', onClick, false
