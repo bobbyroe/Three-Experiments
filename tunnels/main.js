@@ -1,4 +1,6 @@
 (function() {
+
+    // scene set-up
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 40;
@@ -12,11 +14,22 @@
     controls.staticMoving = true;
     controls.dynamicDampingFactor = 0.3;
     controls.keys = [65, 83, 68];
+    controls.enabled = false;
+    // window.cntrls = controls;
     var camera_uses_path = true;
+    var is_paused = false;
     var ctrls = {
         flat_shading: false
     };
     var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    var info_panel = document.querySelector('#info');
+    var panel = renderer.domElement;
+    panel.classList.add('panel');
+    document.body.insertBefore(panel, info_panel);
+
+
+    // misc
     var log = console.log.bind(console);
     var counter = 0;
     var mouse_pos = null;
@@ -26,12 +39,8 @@
     function degToRad(deg) {
         return deg * Math.PI / 180;
     }
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    var info_panel = document.querySelector('#info');
-    var panel = renderer.domElement;
-    panel.classList.add('panel');
-    document.body.insertBefore(panel, info_panel);
-
+    
+    // construct tunnel track
     var points = [];
     var p = 0;
     var num_points = path_points.length;
@@ -63,6 +72,7 @@
         vert.z += Math.random() * 0.3 - 0.15;
     });
     tube_geo.computeFaceNormals();
+
     var lambert_mat = new THREE.MeshLambertMaterial({
         color: 0xFFFFFF,
         side: THREE.DoubleSide,
@@ -83,17 +93,23 @@
         wireframeLinewidth: 2
     });
     var debug_mat = new THREE.MeshBasicMaterial({
-        color: 0xFF9900,
+        color: 0xFF0000,
         wireframe: true,
-        opacity: 1.0,
+        opacity: 0.2,
         transparent: true,
-        wireframeLinewidth: 2
+        wireframeLinewidth: 1
     });
     var tube_mats_array = [lambert_mat, wire_mat];
     var tube = new THREE.SceneUtils.createMultiMaterialObject(tube_geo, tube_mats_array);
     var tube_flat = new THREE.Mesh(tube_geo, flat_mat);
+    var tube_debug = new THREE.Mesh(tube_geo, debug_mat);
     scene.add(tube);
-    scene.add(tube_flat);
+    // scene.add(tube_flat);
+    // scene.add(tube_debug);
+
+
+
+    // boxes
     var box_geo = new THREE.CubeGeometry(0.075, 0.075, 0.075);
 
     function getBoxMat(col) {
@@ -129,7 +145,10 @@
         box.position = pos;
         box.position.x += Math.random() - 0.4;
         box.position.z += Math.random() - 0.4;
-        box.rotation.set(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2);
+        box.rotation.set(Math.random() * Math.PI * 2, 
+            Math.random() * Math.PI * 2, 
+            Math.random() * Math.PI * 2
+        );
         scene.add(box);
         var prob = Math.random() * 1.0;
         if (prob < 0.4) {
@@ -143,10 +162,7 @@
         }
         b += 1;
     }
-    var cone_geo = new THREE.CylinderGeometry(0.0001, 0.5, 1.25);
-    var cone_mat = new THREE.MeshNormalMaterial();
-    var cone = new THREE.Mesh(cone_geo, cone_mat);
-    cone.position = spline.getPointAt(0);
+
     var crosshairs = new THREE.Object3D();
     crosshairs.position.z = -0.2;
 
@@ -171,31 +187,39 @@
     crosshairs.add(line_s);
     crosshairs.add(line_w);
     camera.add(crosshairs);
+    // needed to make the crosshairs visible
+    scene.add(camera);
+
     var laser_mat = new THREE.MeshBasicMaterial({
         color: 0xFFCC00
     });
-    var laser_geo = new THREE.CylinderGeometry(0.02, 0.02, 2, 8);
-    laser_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0, -1, 0));
-    var laser = new THREE.Mesh(laser_geo, laser_mat);
-    laser.position.z = 0;
-    laser.rotation.x = degToRad(90);
-    var laser_targeter = new THREE.Object3D();
-    laser_targeter.add(laser);
-    scene.add(laser_targeter);
+    var laser_wire_mat = new THREE.MeshBasicMaterial({
+        color: 0xFFFF00,
+        wireframe: true,
+        opacity: 1.0,
+        transparent: true,
+        wireframeLinewidth: 0.5
+    });
+
+    var laser_geo = new THREE.IcosahedronGeometry(0.05, 2);
+    var the_laser = new THREE.Mesh(laser_geo, laser_mat);
+    the_laser.position.z = 0;
+    the_laser.rotation.x = degToRad(90);
+    the_laser.direction = new THREE.Vector3(0, 0, 0);
+
+    scene.add(the_laser);
 
     function onKeyUp(evt) {
         var SPACE = 32;
         var ESC = 27;
         var z = 90;
         if (evt.keyCode === 27) {
-            toggleFollow();
+            togglePause();
         }
         if (evt.keyCode === z) {
             fire(true);
         }
     }
-
-    function onClick(evt) {}
 
     function onMouseMove(evt) {
         mouse_pos = {
@@ -205,21 +229,46 @@
         };
     }
 
-    function toggleFollow() {
-        camera_uses_path = !camera_uses_path;
+    function togglePause() {
+        // camera_uses_path = !camera_uses_path;
+        is_paused = !is_paused;
+        controls.enabled = is_paused;
+        controls.target.copy(eye_pos);
     }
 
+    function getLaser () {
+        return the_laser;
+    }
+
+    var raycaster = new THREE.Raycaster();
+    var dir = new THREE.Vector3();
+    var impact = {
+        distance: 0,
+        point: new THREE.Vector3()
+    };
     function fire(frealz) {
-        var dx = camera.position.x - (crosshairs.position.x * -2);
-        var dy = camera.position.y - (crosshairs.position.y * -2);
-        var dz = camera.position.z - crosshairs.position.z;
-        var goal_rote_y = Math.atan2(dz, dx);
-        var goal_rote_x = Math.atan2(dz, dy);
-        laser_targeter.position = camera.position.clone();
-        laser_targeter.rotation.x = (1.5 * camera.rotation.x + degToRad(270)) - goal_rote_x;
-        laser_targeter.rotation.y = (-1.5 * camera.rotation.y + degToRad(90)) - goal_rote_y;
-        laser.position.z = 0;
-        log('zap!');
+
+        var laser = getLaser();
+        var speed = 1;
+        // reset
+        laser.position = camera.position.clone();
+        // calc goal position / direction
+        // camera.updateMatrixWorld();
+        var goal_pos = camera.position.clone().getPositionFromMatrix(crosshairs.matrixWorld);
+
+        laser.direction.subVectors(laser.position, goal_pos)
+            .normalize() // get unit vector
+            .multiplyScalar(speed);
+
+        dir.subVectors(goal_pos, camera.position);
+        raycaster.set(camera.position, dir);
+        var intersects = raycaster.intersectObjects(scene.children, true);
+        if (intersects.length > 0) {
+            impact = {
+                distance: intersects[0].distance,
+                point: intersects[0].point
+            };
+        }
         is_zapping = frealz;
     }
 
@@ -234,40 +283,49 @@
 
     function renderFrame() {
         requestAnimationFrame(renderFrame);
-        counter += val;
+        
         if (counter > 0.94) {
-            val = -0.0005;
-            eye_val = -0.05;
+            val = -0.0003;
+            eye_val = -0.03;
         }
         if (counter < 0.06) {
-            val = 0.0005;
-            eye_val = 0.05;
+            val = 0.0003;
+            eye_val = 0.03;
         }
-        if (camera_uses_path === true) {
+        if (is_paused === false) {
+
+            counter += val;
+
             point = tube_geo.path.getPointAt(counter);
             target.subVectors(pos, point);
             target.multiplyScalar(0.1);
             pos.subVectors(pos, target);
+
             eye_point = tube_geo.path.getPointAt(counter + eye_val);
             eye_target.subVectors(eye_pos, eye_point);
             eye_target.multiplyScalar(0.1);
             eye_pos.subVectors(eye_pos, eye_target);
-            cone.position = eye_target;
+            // cone.position = eye_target;
+
             camera.position = pos;
             camera.lookAt(eye_pos);
             camera.up.set(1, 0, 0);
         } else {
             controls.update();
         }
+
         if (mouse_pos != null) {
             crosshairs.position = mouse_pos;
         }
         if (is_zapping === true) {
-            laser.position.z += 0.9;
-            if (laser.position.z > 30) {
-                fire(false);
+
+            the_laser.position.sub(the_laser.direction);
+            if (the_laser.position.distanceTo(impact.point) < 0.5) {
+                is_zapping = false;
+                the_laser.position.copy(impact.point);
             }
         }
+        
         renderer.render(scene, camera);
     }
 
