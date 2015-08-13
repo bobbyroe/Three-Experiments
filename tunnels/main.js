@@ -15,13 +15,13 @@
     controls.dynamicDampingFactor = 0.3;
     controls.keys = [65, 83, 68];
     controls.enabled = false;
-    // window.cntrls = controls;
+    // window.ctrls = controls;
     var camera_uses_path = true;
     var is_paused = false;
     var ctrls = {
         flat_shading: false
     };
-    var renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setSize(window.innerWidth, window.innerHeight);
     var info_panel = document.querySelector('#info');
     var panel = renderer.domElement;
@@ -32,7 +32,7 @@
     // misc
     var log = console.log.bind(console);
     var counter = 0;
-    var mouse_pos = null;
+    var mouse_pos = new THREE.Vector3();
     var is_zapping = false;
     var win_half_width = window.innerWidth * 0.5;
     var win_half_height = window.innerHeight * 0.5;
@@ -65,7 +65,8 @@
     var line_geo = new THREE.Geometry();
     line_geo.vertices = spline.points;
     var line = new THREE.Line(line_geo, line_mat);
-    var tube_geo = new THREE.TubeGeometry(extrudeSettings.extrudePath, 222, 0.65, 8, false, true);
+                                        // (path, segments, radius, radiusSegments, closed, taper?)
+    var tube_geo = new THREE.TubeGeometry(extrudeSettings.extrudePath, 222, 0.65, 8, false);
     tube_geo.vertices.forEach(function(vert) {
         vert.x += Math.random() * 0.3 - 0.15;
         vert.y += Math.random() * 0.3 - 0.15;
@@ -97,7 +98,8 @@
         wireframe: true,
         opacity: 0.2,
         transparent: true,
-        wireframeLinewidth: 1
+        wireframeLinewidth: 1,
+        side: THREE.BackSide
     });
     var tube_mats_array = [lambert_mat, wire_mat];
     var tube = new THREE.SceneUtils.createMultiMaterialObject(tube_geo, tube_mats_array);
@@ -110,13 +112,15 @@
 
 
     // boxes
-    var box_geo = new THREE.CubeGeometry(0.075, 0.075, 0.075);
-
     function getBoxMat(col) {
         if (col == null) col = Math.random() * 0xFFFFFF;
         return new THREE.MeshLambertMaterial({
             color: col,
-            shading: THREE.FlatShading
+            emissive: col,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.4
+            // shading: THREE.SmoothShading
         });
     }
 
@@ -134,22 +138,39 @@
     var b = 0;
     var num_boxes = 30;
     var point_light;
-
+    var box_geo = new THREE.BoxGeometry(0.1, 0.1, 0.1); // new THREE.IcosahedronGeometry(0.1, 1); // 
+    var box_mat = getBoxMat(0xFF9900);
+    var all_boxes =  new THREE.Object3D();
+    scene.add(all_boxes);
     while (b < num_boxes) {
-        var box = new THREE.BoxHelper();
-        box.scale.set(0.05, 0.05, 0.05);
-        box.material.color.setRGB(0.6, 0.45, 0.0);
-        box.material.linewidth = 2;
+       
         p = Math.max(Math.min(b / num_boxes + Math.random() * 0.05, 1), 0);
-        pos = spline.getPointAt(p);
-        box.position = pos;
-        box.position.x += Math.random() - 0.4;
-        box.position.z += Math.random() - 0.4;
-        box.rotation.set(Math.random() * Math.PI * 2, 
+        var pos = spline.getPointAt(p);
+        pos.x += Math.random() - 0.4;
+        pos.z += Math.random() - 0.4;
+        var rote = new THREE.Vector3(
+            Math.random() * Math.PI * 2, 
             Math.random() * Math.PI * 2, 
             Math.random() * Math.PI * 2
         );
+
+
+        var box_fill = new THREE.Mesh(box_geo, box_mat);
+        box_fill.position.copy(pos);
+        box_fill.rotation.copy(rote);
+        box_geo.computeFaceNormals();
+        scene.add(box_fill);
+
+        // normals
+        var face_normals = new THREE.FaceNormalsHelper( box_fill, 0.005, 0xffff00, 1 );
+        // scene.add(face_normals);
+        
+        var box = new THREE.BoxHelper(box_fill);
+        box.material.color.setRGB(0.6, 0.45, 0.0);
+        // box.material.linewidth = 2;
         scene.add(box);
+
+
         var prob = Math.random() * 1.0;
         if (prob < 0.4) {
             point_light = new THREE.PointLight(0x000000, 0.8, 3.0);
@@ -162,6 +183,7 @@
         }
         b += 1;
     }
+
 
     var crosshairs = new THREE.Object3D();
     crosshairs.position.z = -0.2;
@@ -187,27 +209,11 @@
     crosshairs.add(line_s);
     crosshairs.add(line_w);
     camera.add(crosshairs);
+
     // needed to make the crosshairs visible
-    scene.add(camera);
+    // scene.add(camera);
 
-    var laser_mat = new THREE.MeshBasicMaterial({
-        color: 0xFFCC00
-    });
-    var laser_wire_mat = new THREE.MeshBasicMaterial({
-        color: 0xFFFF00,
-        wireframe: true,
-        opacity: 1.0,
-        transparent: true,
-        wireframeLinewidth: 0.5
-    });
-
-    var laser_geo = new THREE.IcosahedronGeometry(0.05, 2);
-    var the_laser = new THREE.Mesh(laser_geo, laser_mat);
-    the_laser.position.z = 0;
-    the_laser.rotation.x = degToRad(90);
-    the_laser.direction = new THREE.Vector3(0, 0, 0);
-
-    scene.add(the_laser);
+    // EVENTS
 
     function onKeyUp(evt) {
         var SPACE = 32;
@@ -217,16 +223,16 @@
             togglePause();
         }
         if (evt.keyCode === z) {
-            fire(true);
+            fireLaser();
         }
     }
 
     function onMouseMove(evt) {
-        mouse_pos = {
-            x: (evt.clientX - win_half_width) * 0.00025,
-            y: (evt.clientY - win_half_height) * -0.00025,
-            z: -0.2
-        };
+        mouse_pos.set(
+            (evt.clientX - win_half_width) * 0.00025,
+            (evt.clientY - win_half_height) * -0.00025,
+            -0.2
+        );
     }
 
     function togglePause() {
@@ -236,40 +242,114 @@
         controls.target.copy(eye_pos);
     }
 
-    function getLaser () {
-        return the_laser;
-    }
 
+
+
+    // Frickin Lasers!
+    // var laser_wire_mat = new THREE.MeshBasicMaterial({
+    //     color: 0xFFFF00,
+    //     wireframe: true,
+    //     opacity: 1.0,
+    //     transparent: true,
+    //     wireframeLinewidth: 0.5
+    // });
+    var laser_geo = new THREE.IcosahedronGeometry(0.05, 2);
+    var lasers = [];
     var raycaster = new THREE.Raycaster();
-    var dir = new THREE.Vector3();
-    var impact = {
-        distance: 0,
-        point: new THREE.Vector3()
-    };
-    function fire(frealz) {
+    var direction = new THREE.Vector3();
 
-        var laser = getLaser();
-        var speed = 1;
-        // reset
-        laser.position = camera.position.clone();
+    // debug 
+    var big_line_mat = new THREE.LineBasicMaterial({
+        color: 0x009900,
+        linewidth: 1
+    });
+
+    function getNewLaserBolt () {
+        var laser_mat = new THREE.MeshBasicMaterial({ color: 0xFFCC00, transparent: true });
+        var new_laser = new THREE.Mesh(laser_geo, laser_mat);
+        camera.updateMatrixWorld();
+        new_laser.position.copy(camera.position);
+        new_laser.direction = new THREE.Vector3(0, 0, 0);
+        var active = true;
+        var scale = 1.0;
+        var is_exploding = false;
+
         // calc goal position / direction
-        // camera.updateMatrixWorld();
-        var goal_pos = camera.position.clone().getPositionFromMatrix(crosshairs.matrixWorld);
-
-        laser.direction.subVectors(laser.position, goal_pos)
-            .normalize() // get unit vector
+        var speed = 1;
+        var goal_pos = camera.position.clone().setFromMatrixPosition(crosshairs.matrixWorld);
+        new_laser.direction.subVectors(new_laser.position, goal_pos)
+            .normalize()
             .multiplyScalar(speed);
 
-        dir.subVectors(goal_pos, camera.position);
-        raycaster.set(camera.position, dir);
+        // find lasers impact point
+        var impact = {
+            distance: 0,
+            point: new THREE.Vector3()
+        };
+        direction.subVectors(goal_pos, camera.position);
+        raycaster.set(camera.position, direction);
+        // raycaster.precision = 0.000001;
         var intersects = raycaster.intersectObjects(scene.children, true);
+        
+        // BIG DEBUG LINE
+        var big_line_geo = new THREE.Geometry();
+        var big_line_end_pos = goal_pos.sub(new_laser.direction.clone().multiplyScalar(10));
+        big_line_geo.vertices.push(camera.position.clone(), big_line_end_pos);
+        var big_line = new THREE.Line(big_line_geo, big_line_mat);
+        big_line.direction = new_laser.direction.clone().multiplyScalar(0.5);
+        
+        // window.line = big_line;
+
+        log(intersects); // , raycaster);
+
         if (intersects.length > 0) {
             impact = {
                 distance: intersects[0].distance,
                 point: intersects[0].point
             };
         }
-        is_zapping = frealz;
+
+        function update () {
+            if (active === true) {
+                if (is_exploding === false) {
+                    new_laser.position.sub(new_laser.direction);
+
+                    // big_line.position.sub(big_line.direction);
+
+                    if (new_laser.position.distanceTo(impact.point) < 0.5) {
+                        new_laser.position.copy(impact.point);
+                        new_laser.scale = new THREE.Vector3(1.0, 1.0, 1.0);
+                        new_laser.material.color.setRGB(1, 0, 0);
+                        is_exploding = true;
+                    }
+                } else {
+                    if (scale > 0.01) {
+                        scale *= 0.98;
+                        new_laser.material.color.r *= 0.98;
+                        
+                    } else {
+                        scale = 0.01;
+                        active = false;
+                    }
+                    new_laser.scale.set(scale, scale, scale);
+                }
+            }
+        }
+
+        return {
+            geo: new_laser,
+            line: big_line,
+            update: update,
+            impact: impact,
+            active: active
+        }
+    }
+
+    function fireLaser() {
+        var laser = getNewLaserBolt();
+        lasers.push(laser);
+        scene.add(laser.geo);
+        // scene.add(laser.line);
     }
 
     var pos = new THREE.Vector3(9, -1, 10.5); // initial camera pos
@@ -280,6 +360,7 @@
     var eye_target = new THREE.Vector3();
     var val = 0.0005;
     var eye_val = 0.05;
+    var scale = 0.1;
 
     function renderFrame() {
         requestAnimationFrame(renderFrame);
@@ -296,18 +377,18 @@
 
             counter += val;
 
-            point = tube_geo.path.getPointAt(counter);
+            point = tube_geo.parameters.path.getPointAt(counter);
             target.subVectors(pos, point);
-            target.multiplyScalar(0.1);
+            target.multiplyScalar(scale);
             pos.subVectors(pos, target);
 
-            eye_point = tube_geo.path.getPointAt(counter + eye_val);
+            eye_point = tube_geo.parameters.path.getPointAt(counter + eye_val);
             eye_target.subVectors(eye_pos, eye_point);
-            eye_target.multiplyScalar(0.1);
+            eye_target.multiplyScalar(scale);
             eye_pos.subVectors(eye_pos, eye_target);
             // cone.position = eye_target;
 
-            camera.position = pos;
+            camera.position.copy(pos);
             camera.lookAt(eye_pos);
             camera.up.set(1, 0, 0);
         } else {
@@ -315,16 +396,12 @@
         }
 
         if (mouse_pos != null) {
-            crosshairs.position = mouse_pos;
+            crosshairs.position.copy(mouse_pos);
         }
-        if (is_zapping === true) {
-
-            the_laser.position.sub(the_laser.direction);
-            if (the_laser.position.distanceTo(impact.point) < 0.5) {
-                is_zapping = false;
-                the_laser.position.copy(impact.point);
-            }
-        }
+        
+        lasers.forEach( function (zap) {
+            zap.update();
+        });
         
         renderer.render(scene, camera);
     }
@@ -334,17 +411,13 @@
 
     var doc = document;
     function showInfoPanel() {
-        var is_highlighing_points;
         panel.classList.add('scooched_right');
         info_panel.classList.add('open');
-        is_highlighing_points = false;
     }
 
     function hideInfoPanel() {
-        var is_highlighing_points;
         panel.classList.remove('scooched_right');
         info_panel.classList.remove('open');
-        is_highlighing_points = true;
     }
 
     function toggleInfoPanel() {
@@ -360,7 +433,7 @@
             toggleInfoPanel();
         }
         if (evt.target.id === '') {
-            hideInfoPanel();
+            if (is_paused === false) { fireLaser(); }
         }
     }
 
