@@ -33,6 +33,8 @@
     var log = console.log.bind(console);
     var counter = 0;
     var mouse_pos = new THREE.Vector3();
+    var mouse = new THREE.Vector2();
+
     var is_zapping = false;
     var win_half_width = window.innerWidth * 0.5;
     var win_half_height = window.innerHeight * 0.5;
@@ -117,10 +119,8 @@
         return new THREE.MeshLambertMaterial({
             color: col,
             emissive: col,
-            side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.4
-            // shading: THREE.SmoothShading
+            opacity: 0.0
         });
     }
 
@@ -139,9 +139,8 @@
     var num_boxes = 30;
     var point_light;
     var box_geo = new THREE.BoxGeometry(0.1, 0.1, 0.1); // new THREE.IcosahedronGeometry(0.1, 1); // 
-    var box_mat = getBoxMat(0xFF9900);
-    var all_boxes =  new THREE.Object3D();
-    scene.add(all_boxes);
+    // var box_mat = getBoxMat(0xFF9900);
+    var kill_boxes = [];
     while (b < num_boxes) {
        
         p = Math.max(Math.min(b / num_boxes + Math.random() * 0.05, 1), 0);
@@ -154,22 +153,24 @@
             Math.random() * Math.PI * 2
         );
 
-
+        var box_mat = getBoxMat(0xFF9900);
         var box_fill = new THREE.Mesh(box_geo, box_mat);
         box_fill.position.copy(pos);
         box_fill.rotation.copy(rote);
-        box_geo.computeFaceNormals();
         scene.add(box_fill);
 
         // normals
-        var face_normals = new THREE.FaceNormalsHelper( box_fill, 0.005, 0xffff00, 1 );
+        // var face_normals = new THREE.FaceNormalsHelper( box_fill, 0.005, 0xffff00, 1 );
         // scene.add(face_normals);
         
         var box = new THREE.BoxHelper(box_fill);
+        box.position.copy(pos);
+        box.rotation.copy(rote);
         box.material.color.setRGB(0.6, 0.45, 0.0);
-        // box.material.linewidth = 2;
+        box.material.transparent = true;
+        box.material.linewidth = 2;
+        box.kill = getKillBoxFn(box, box_fill);
         scene.add(box);
-
 
         var prob = Math.random() * 1.0;
         if (prob < 0.4) {
@@ -182,6 +183,29 @@
             scene.add(point_light);
         }
         b += 1;
+    }
+
+    function getKillBoxFn (box, box_mesh) {
+        var scale = 1.0;
+        box.active = false;
+        return function () {
+            if (box.active === true) {
+                if (scale < 50) {
+                    scale *= 1.1;
+                    box.material.color.r *= 1.1;
+                    box.material.color.g *= 1.1;
+                    box.material.color.b *= 1.1;
+                    box.material.opacity -= 0.01;
+                    box.material.linewidth = scale;
+                    box_mesh.material.opacity += 0.02;
+                } else {
+                    // scale = 0.01;
+                    box.material.opacity = 1.0;
+                    box.material.linewidth = 1;
+                    box.active = false;
+                }
+            }
+        }
     }
 
 
@@ -233,6 +257,10 @@
             (evt.clientY - win_half_height) * -0.00025,
             -0.2
         );
+
+        // mouse 2
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
     }
 
     function togglePause() {
@@ -297,10 +325,6 @@
         big_line_geo.vertices.push(camera.position.clone(), big_line_end_pos);
         var big_line = new THREE.Line(big_line_geo, big_line_mat);
         big_line.direction = new_laser.direction.clone().multiplyScalar(0.5);
-        
-        // window.line = big_line;
-
-        log(intersects); // , raycaster);
 
         if (intersects.length > 0) {
             impact = {
@@ -309,11 +333,28 @@
             };
         }
 
+        // cleanup
+        kill_boxes = kill_boxes.filter(function (box) {
+            return box.active === true;
+        });
+        log(kill_boxes.length);
+
+        // other mouse – for boxes
+        raycaster.setFromCamera(mouse, camera);
+        intersects = raycaster.intersectObjects(scene.children);
+        var dead_box;
+        if (intersects.length > 0) {
+            dead_box = intersects[0].object;
+            if (dead_box.type === 'Line') { // box helper
+                dead_box.active = true;
+                kill_boxes.push(dead_box);
+            }
+        }
+
         function update () {
             if (active === true) {
                 if (is_exploding === false) {
                     new_laser.position.sub(new_laser.direction);
-
                     // big_line.position.sub(big_line.direction);
 
                     if (new_laser.position.distanceTo(impact.point) < 0.5) {
@@ -401,6 +442,10 @@
         
         lasers.forEach( function (zap) {
             zap.update();
+        });
+
+        kill_boxes.forEach( function (box) {
+            box.kill();
         });
         
         renderer.render(scene, camera);
