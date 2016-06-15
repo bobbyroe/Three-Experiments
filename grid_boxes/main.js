@@ -20,19 +20,7 @@ scene.fog = new THREE.FogExp2(0x000000, 0.00025);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-var ball_geo = new THREE.IcosahedronGeometry(0.6, 1);
 var cube_geo = new THREE.BoxGeometry(1, 1, 1);
-var tetra_geo = new THREE.SphereGeometry(1, 3, 2);
-function getWireMat (col) {
-
-    var color = col || 0xFFFF00;
-    return new THREE.MeshBasicMaterial({
-        color: color,
-        opacity: 0.5,
-        wireframe: true,
-        wireframeLinewidth: 2
-    });
-}
 
 function getSolidMat (col) {
 
@@ -48,16 +36,24 @@ var objects = [];
 var mesh_scale = 300;
 var grid_size = 10;
 var num_boxes = Math.pow(grid_size, 3);
+var wbl_sz = 100;
 var time_inc = 0;
 var i = 0;
 function getMesh (n) {
 
     function getPosition () {
-        return new THREE.Vector3(
-            (n % grid_size * mesh_scale) - 1250,
-            (Math.floor(n * (1 / grid_size)) % grid_size * mesh_scale) - 1250,
-            (Math.floor(n * 1 / Math.pow(grid_size, 2)) * -mesh_scale) + 1250
-        );
+        var wbl = {
+            x: Math.random() * wbl_sz - (wbl_sz * 0.5),
+            y: Math.random() * wbl_sz - (wbl_sz * 0.5),
+            z: Math.random() * wbl_sz - (wbl_sz * 0.5)
+        };
+        var pos = {
+            x: (n % grid_size * mesh_scale) - 1250,
+            y: (Math.floor(n * (1 / grid_size)) % grid_size * mesh_scale) - 1250,
+            z: (Math.floor(n * 1 / Math.pow(grid_size, 2)) * -mesh_scale) + 1250
+        };
+
+        return { x: pos.x + wbl.x, y: pos.y + wbl.y, z: pos.z + wbl.z };
     }
     function getRGB () {
         return {
@@ -77,7 +73,7 @@ function getMesh (n) {
 
     function anim (n) {
 
-        var mult = Math.max(Math.sin(this.col.x + this.col.z + n), 0.001);
+        var mult = Math.max(Math.sin(this.col.x + this.col.z + n), 0.0001);
         this.mesh.scale.x = this.mesh.scale.y = this.mesh.scale.z = mult * 160;
         // this.material.color.setHSL(1 - mult, 1.0, 0.5);
     }
@@ -96,11 +92,10 @@ for (var i = 0; i < num_boxes; i++) {
     scene.add(obj.mesh);
 }
 
-camera.position.z = 3200;
-camera.position.y = 2000;
-function onKeyUp (evt) {
-    console.log(evt.keyCode);
-}
+
+camera.position.x = -1851;
+camera.position.y = -2304;
+camera.position.z =  2251;
 
 function renderFrame () {
 
@@ -112,7 +107,7 @@ function renderFrame () {
     } else {
         controls.update();
     }
-    time_inc += 0.08;
+    time_inc += 0.03;
     for (var _i = 0, _len = objects.length; _i < _len; _i++) {
         obj = objects[_i];
         obj.anim(time_inc);
@@ -122,7 +117,3 @@ function renderFrame () {
 }
 
 renderFrame();
-// document.addEventListener('keyup', onKeyUp, false);
-
-
-
