@@ -33,6 +33,14 @@ plane.rotation.x = -Math.PI * 0.5;
 plane.receiveShadow = true;
 scene.add(plane);
 
+var trunk_geo = new THREE.CubeGeometry(2, 1, 2);
+var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x202020 });
+var trunk = new THREE.Mesh(trunk_geo, trunk_mat);
+trunk.position.set(-5, 1, 5);
+trunk.castShadow = true;
+trunk.rotation.y = degToRad(45);
+scene.add(trunk);
+
 // Lights 
 var sunlight = new THREE.DirectionalLight(0xe0e0e0, 0.9);
 sunlight.position.set(20, 50, 0);
@@ -65,14 +73,20 @@ var quad_tree = new Node(0, 0, window.innerWidth, window.innerHeight);
 var ball_radius = 0.5;
 var ball_geo = new THREE.IcosahedronGeometry(ball_radius, 3);
 var next_id = 0;
-function getBallMat () {
+
+function getBallMat (with_color) {
 
     var col = new THREE.Color();
-    col.setHSL( 0.33, 1, 0.5 );
+
+    if (with_color != null) {
+        col.setRGB(with_color.r, with_color.g, with_color.b);
+    } else {
+        col.setHSL( 0.33 + (Math.random() * 0.2 - 0.1), 1, 0.5  + (Math.random() * 0.5 - 0.25));
+    }
     return new THREE.MeshPhongMaterial({
         color: col,
         specular: 0xa0a0a0,
-        shininess: 10,
+        shininess: 10, // Math.random() * 10,
         shading: THREE.SmoothShading // THREE.FlatShading
     });
 }
@@ -81,21 +95,25 @@ var friction = 0.95;
 var origin = new THREE.Vector3(0, 1, 0);
 function getBall () {
     
-    var ball = new THREE.Mesh(ball_geo, getBallMat());
-    var vel_mag = 0.05;
     var num = getIncrement();
-    // ball.position.set(0, 1, 0);
     var has_layout = layout[num] != null;
-    var pos = has_layout ? layout[num].position : {x:0, y:1, z:0};
-    ball.position.set(pos.x, pos.y, pos.z);
+    var color = has_layout ? layout[num].color : null;
+    var ball = new THREE.Mesh(ball_geo, getBallMat(color));
+    
+    var rand_scale = Math.random() * 0.6 + 0.5;
+    ball.scale.set(rand_scale, rand_scale, rand_scale);
+
+    var pos = has_layout ? layout[num].position : { x: 0, y: rand_scale, z: 0 };
+    ball.position.set(pos.x, rand_scale, pos.z);
+
+    var vel_mag = 0.05;
     ball.velocity = has_layout === false ? new THREE.Vector3(
         Math.random() * vel_mag - vel_mag * 0.5,
         0,
         Math.random() * vel_mag - vel_mag * 0.5
     ) : new THREE.Vector3(0, 0, 0);
 
-    var rand_scale = Math.random() * 0.6 + 0.5;
-    ball.scale.set(rand_scale, rand_scale, rand_scale);
+    
     ball.castShadow = true;
 
     function update () { 
@@ -198,7 +216,7 @@ function onKey (evt) {
 
     var layout;
     var SPACE = 32;
-    if (evt.keyCode === SPACE) {
+    if (evt.code === "Space") {
 
         if (evt.shiftKey === false) {
             addBalls(12);
@@ -206,6 +224,9 @@ function onKey (evt) {
             layout = JSON.stringify(getLayoutData());
             console.log(layout);
         }
+    }
+    if (evt.code === "KeyD") {
+        console.log("delete:", selected_obj);
     }
 }
 document.addEventListener('keypress', onKey, false);
@@ -225,13 +246,17 @@ function getLayoutData () {
     return arr;
 }
 
-
 function getIncrement () {
     var n = next_id;
     next_id++;
     return n;
 }
 
+function degToRad(deg) {
+    return deg * Math.PI / 180;
+}
+
+var selected_obj;
 var dragControls = new THREE.DragControls( objs, camera, renderer.domElement );
 dragControls.addEventListener( 'dragstart', function ( evt ) { 
     console.log(evt.object.position); 
@@ -239,6 +264,7 @@ dragControls.addEventListener( 'dragstart', function ( evt ) {
 dragControls.addEventListener( 'dragend', function ( evt ) {
     console.log(evt.object.position);
     evt.object.position.y = 1.0; // reset y pos to 1
+    selected_obj = evt.object;
 } );
 
 
