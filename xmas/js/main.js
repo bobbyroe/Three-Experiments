@@ -19,7 +19,8 @@ var wire_mat = new THREE.MeshBasicMaterial({
     opacity: 1.0,
     transparent: true,
     wireframeLinewidth: 2,
-    vertexColors: THREE.VertexColors
+    vertexColors: THREE.VertexColors,
+    color: 0x202020
 });
 
 
@@ -33,7 +34,34 @@ plane.rotation.x = -Math.PI * 0.5;
 plane.receiveShadow = true;
 scene.add(plane);
 
+// "trunk" geo
 var trunk_geo = new THREE.CubeGeometry(2, 1, 2);
+var trunk_verts = [
+    new THREE.Vector3(1, 0.25, 0.6),
+    new THREE.Vector3(1, 0.25, -0.6),
+    new THREE.Vector3(1, -0.25, 0.6),
+    new THREE.Vector3(1, -0.25, -0.6),
+    new THREE.Vector3(-1, 0.25, -1),
+    new THREE.Vector3(-1, 0.25, 1),
+    new THREE.Vector3(-1, -0.25, -1),
+    new THREE.Vector3(-1, -0.25, 1)
+];
+trunk_geo.vertices = trunk_verts;
+trunk_geo.computeBoundingSphere();
+trunk_geo.verticesNeedUpdate = true;
+
+// duck!
+// var loader = new THREE.OBJLoader();
+// var duck_geo, duck;
+// var duck_mat = new THREE.MeshBasicMaterial({
+//     color: 0xFFFF00
+// });
+// function addDuck (obj) {
+//     duck_geo = obj.children[0].geometry;
+//     duck = new THREE.Mesh(duck_geo, duck_mat);
+//     scene.add(duck);
+// }
+
 var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x202020 });
 var trunk = new THREE.Mesh(trunk_geo, trunk_mat);
 trunk.position.set(-5, 1, 5);
@@ -101,7 +129,8 @@ function getBall () {
     var ball = new THREE.Mesh(ball_geo, getBallMat(color));
     
     var rand_scale = Math.random() * 0.6 + 0.5;
-    ball.scale.set(rand_scale, rand_scale, rand_scale);
+    var scale = has_layout ? layout[num].scale : rand_scale;
+    ball.scale.set(scale, scale, scale);
 
     var pos = has_layout ? layout[num].position : { x: 0, y: rand_scale, z: 0 };
     ball.position.set(pos.x, rand_scale, pos.z);
@@ -140,7 +169,8 @@ function getBall () {
         id: num,
         update: update,
         highlight: function() {},
-        nudge: nudge
+        nudge: nudge,
+        scale: rand_scale
     };
         
     return ball;
@@ -199,6 +229,10 @@ function renderFrame () {
 
                     // set vel based on dist
                     b.velocity.add(direction);
+
+                    // override the "y" values
+                    b.velocity.y = 0;
+                    b.position.y = b._props.scale;
                 }
             }
         }
@@ -208,8 +242,15 @@ function renderFrame () {
 }
 
 // START!
-addBalls();
-renderFrame();
+function preloadAssets () {
+  // loader.load('duck.obj', function(obj) {
+    // addDuck();
+    addBalls(layout.length);
+    renderFrame();
+  // });
+}
+preloadAssets();
+
 
 // keyboard listener
 function onKey (evt) {
@@ -238,7 +279,7 @@ function getLayoutData () {
         obj = {
             position: objs[i].position,
             id: objs[i]._props.id,
-            scale: objs[i].scale,
+            scale: objs[i]._props.scale,
             color: objs[i].material.color
         };
         arr.push(obj);
