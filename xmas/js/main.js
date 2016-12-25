@@ -163,12 +163,15 @@ function getBall () {
 
         // goal position!
         // direction = target position - object position
-        var dx = goal_pos.x - ball.position.x;
-        var dz = goal_pos.z - ball.position.z;
-        var angle = Math.atan2(dz, dx);
-        var rate = 0.001;
-        ball.velocity.x += Math.cos(angle) * rate; // hard coded "rate" = 2
-        ball.velocity.z += Math.sin(angle) * rate;
+        var dx, dz, angle, rate;
+        if (goal_pos != null) {
+            dx = goal_pos.x - ball.position.x;
+            dz = goal_pos.z - ball.position.z;
+            angle = Math.atan2(dz, dx);
+            rate = 0.001;
+            ball.velocity.x += Math.cos(angle) * rate; // hard coded "rate" = 2
+            ball.velocity.z += Math.sin(angle) * rate;
+        }
 
         ball.position.addVectors(ball.position, ball.velocity);
         ball.velocity.multiplyScalar(friction);
