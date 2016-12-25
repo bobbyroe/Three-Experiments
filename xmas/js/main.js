@@ -22,7 +22,7 @@ document.body.appendChild(message_div);
 // from ...
 var from_div = document.createElement('div');
 from_div.id = "from";
-from_div.textContent = "Love, Eleanor, Bobby and Nic";
+from_div.textContent = "Love, Bobby, Eleanor and Nic";
 document.body.appendChild(from_div);
 
 // Geometry and Materials
@@ -159,16 +159,16 @@ function getBall () {
     
     ball.castShadow = true;
 
+    var rate = Math.random() * 0.0005 + 0.001;
     function update () { 
 
         // goal position!
         // direction = target position - object position
-        var dx, dz, angle, rate;
+        var dx, dz, angle;
         if (goal_pos != null) {
             dx = goal_pos.x - ball.position.x;
             dz = goal_pos.z - ball.position.z;
             angle = Math.atan2(dz, dx);
-            rate = 0.001;
             ball.velocity.x += Math.cos(angle) * rate; // hard coded "rate" = 2
             ball.velocity.z += Math.sin(angle) * rate;
         }
