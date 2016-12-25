@@ -15,7 +15,7 @@
 			background-color: #FFFFFF;
 			margin: 0;
 		}
-		canvas { 
+		#canvas { 
 			width: 100%; 
 			height: 100%; 
 		}
@@ -50,9 +50,35 @@
 				}
 
 		}
+		#static {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%; 
+			height: 100%; 
+			background: #FFFFFF url('./tree.jpg') 50% 50% no-repeat;
+			background-size: contain;
+			text-align: center;
+			font-family: 'Slabo 27px', sans-serif;
+			line-height: 35px;
+			color: #808080;
+		}
+		.no-webgl #static { 
+			display: block; 
+		}
+		.webgl #static { 
+			display: none; 
+		}
+		.no-webgl #canvas { 
+			display: none; 
+		}
+		.webgl #canvas { 
+			display: block; 
+		}
 	</style> 
 </head> 
-<body> 
+<body>
+	<script src="js/modernizr.min.js"></script> 
 	<script src="../z_libs/three.min.js"></script>
 	<script src="js/quadtree.js"></script>
 	<script src="js/DragControls.js"></script>

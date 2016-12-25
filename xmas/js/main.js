@@ -1,4 +1,10 @@
 
+if (Modernizr.webgl) {
+  console.log('jhGASJDHGASDJHGASD');
+} else {
+  console.log('poo');
+}
+
 // scene setup stuff
 var scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0xe0e0e0, 0.0025);
@@ -11,7 +17,14 @@ renderer.shadowMapSoft = false;
 renderer.setClearColor(0xFFFFFF);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.id = 'canvas';
 document.body.appendChild(renderer.domElement);
+
+// no webgl static inamge
+var pic_div = document.createElement('div');
+pic_div.id = "static";
+pic_div.textContent = "Sorry, this web browser does not support WebGL!";
+document.body.appendChild(pic_div);
 
 // MERRY CHRISTMAS!
 var message_div = document.createElement('div');
