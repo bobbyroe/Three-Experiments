@@ -13,6 +13,18 @@ renderer.setClearColor(0xFFFFFF);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// MERRY CHRISTMAS!
+var message_div = document.createElement('div');
+message_div.id = "message";
+message_div.textContent = "MERRY CHRISTMAS";
+document.body.appendChild(message_div);
+
+// from ...
+var from_div = document.createElement('div');
+from_div.id = "from";
+from_div.textContent = "Love, Eleanor, Bobby and Nic";
+document.body.appendChild(from_div);
+
 // Geometry and Materials
 function getWireMat (col) {
     var colr = new THREE.Color();
@@ -98,11 +110,18 @@ function getBallMat (with_color) {
 
     var col = new THREE.Color();
     var emissive_col = new THREE.Color();
+    var rand_hue;
     if (with_color != null) {
         col.setRGB(with_color.r, with_color.g, with_color.b);
         emissive_col.setRGB(with_color.r * 0.5, with_color.g * 0.5, with_color.b * 0.5);
     } else {
-        col.setHSL( 0.33 + (Math.random() * 0.2 - 0.1), 1, 0.5  + (Math.random() * 0.5 - 0.25));
+        rand_hue = {
+            h: 0.33 + (Math.random() * 0.2 - 0.1),
+            s: 1, 
+            l: 0.5  + (Math.random() * 0.5 - 0.25)
+        }
+        col.setHSL(rand_hue.h, rand_hue.s, rand_hue.l);
+        emissive_col.setRGB(rand_hue.h * 0.5, rand_hue.s * 0.5, rand_hue.l * 0.5);
     }
     return new THREE.MeshPhongMaterial({ // MeshBasicMaterial
         color: col,
@@ -126,20 +145,31 @@ function getBall () {
     var scale = has_layout ? layout[num].scale : rand_scale;
     ball.scale.set(scale, scale, scale);
 
-    var pos = has_layout ? layout[num].position : { x: 0, y: rand_scale, z: 0 };
-    ball.position.set(pos.x, rand_scale * 0.5, pos.z);
+    var pos = { x: 0, y: rand_scale * 0.5, z: 0 };
+    var goal_pos = has_layout ? layout[num].position : null;
+    ball.position.set(pos.x, rand_scale, pos.z);
 
-    var vel_mag = 0.05;
-    ball.velocity = has_layout === false ? new THREE.Vector3(
+    var vel_mag = 0.005;
+    ball.velocity = new THREE.Vector3(
         Math.random() * vel_mag - vel_mag * 0.5,
         0,
         Math.random() * vel_mag - vel_mag * 0.5
-    ) : new THREE.Vector3(0, 0, 0);
+    );
 
     
     ball.castShadow = true;
 
     function update () { 
+
+        // goal position!
+        // direction = target position - object position
+        var dx = goal_pos.x - ball.position.x;
+        var dz = goal_pos.z - ball.position.z;
+        var angle = Math.atan2(dz, dx);
+        var rate = 0.001;
+        ball.velocity.x += Math.cos(angle) * rate; // hard coded "rate" = 2
+        ball.velocity.z += Math.sin(angle) * rate;
+
         ball.position.addVectors(ball.position, ball.velocity);
         ball.velocity.multiplyScalar(friction);
     }
@@ -162,7 +192,7 @@ function getBall () {
     ball._props = {
         id: num,
         update: update,
-        highlight: function() {},
+        goal_pos: goal_pos,
         nudge: nudge,
         scale: rand_scale
     };
@@ -261,7 +291,7 @@ function onKey (evt) {
         }
     }
     if (evt.code === "KeyD") {
-        console.log("delete:", selected_obj);
+        console.log("delete:");
     }
 }
 document.addEventListener('keypress', onKey, false);
@@ -291,16 +321,16 @@ function degToRad(deg) {
     return deg * Math.PI / 180;
 }
 
-var selected_obj;
-var dragControls = new THREE.DragControls( objs, camera, renderer.domElement );
-dragControls.addEventListener( 'dragstart', function ( evt ) { 
-    console.log(evt.object.position); 
-} );
-dragControls.addEventListener( 'dragend', function ( evt ) {
-    console.log(evt.object.position);
-    evt.object.position.y = 1.0; // reset y pos to 1
-    selected_obj = evt.object;
-} );
+// var selected_obj;
+// var dragControls = new THREE.DragControls( objs, camera, renderer.domElement );
+// dragControls.addEventListener( 'dragstart', function ( evt ) { 
+//     console.log(evt.object.position); 
+// } );
+// dragControls.addEventListener( 'dragend', function ( evt ) {
+//     console.log(evt.object.position);
+//     evt.object.position.y = 1.0; // reset y pos to 1
+//     selected_obj = evt.object;
+// } );
 
 
 
