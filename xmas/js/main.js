@@ -8,26 +8,31 @@ camera.lookAt(scene.position);
 var renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.shadowMapEnabled = true;
 renderer.shadowMapSoft = false;
-renderer.setClearColor(0xe0e0e0);
+renderer.setClearColor(0xFFFFFF);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Geometry and Materials
-var wire_mat = new THREE.MeshBasicMaterial({
-    wireframe: true,
-    opacity: 1.0,
-    transparent: true,
-    wireframeLinewidth: 2,
-    vertexColors: THREE.VertexColors,
-    color: 0x202020
-});
+function getWireMat (col) {
+    var colr = new THREE.Color();
+    colr.setRGB(col.r, col.g, col.b);
+
+    var mat = new THREE.MeshBasicMaterial({
+        wireframe: true,
+        opacity: 1.0,
+        transparent: true,
+        wireframeLinewidth: 2,
+        vertexColors: THREE.VertexColors,
+        color: colr
+    });
+}
 
 
 // Ground plane
 var plane_geo = new THREE.PlaneBufferGeometry(100, 100, 100);
 var basic_mat = new THREE.MeshBasicMaterial({
-    color: 0xe0e0e0
+    color: 0xFFFFFF
 });
 var plane = new THREE.Mesh(plane_geo, basic_mat);
 plane.rotation.x = -Math.PI * 0.5;
@@ -49,7 +54,7 @@ var trunk_verts = [
 trunk_geo.vertices = trunk_verts;
 trunk_geo.computeBoundingSphere();
 trunk_geo.verticesNeedUpdate = true;
-var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x202020 });
+var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x402020 });
 var trunk = new THREE.Mesh(trunk_geo, trunk_mat);
 trunk.position.set(-5, 1, 5);
 trunk.castShadow = true;
@@ -121,7 +126,7 @@ function getBallMat (with_color) {
     } else {
         col.setHSL( 0.33 + (Math.random() * 0.2 - 0.1), 1, 0.5  + (Math.random() * 0.5 - 0.25));
     }
-    return new THREE.MeshPhongMaterial({
+    return new THREE.MeshBasicMaterial({ // MeshPhongMaterial({
         color: col,
         specular: 0xa0a0a0,
         shininess: Math.random() * 10 + 2,
