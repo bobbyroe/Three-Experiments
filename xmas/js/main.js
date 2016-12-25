@@ -61,29 +61,6 @@ trunk.castShadow = true;
 trunk.rotation.y = degToRad(45);
 scene.add(trunk);
 
-// star / duck / bird ?
-// var duck_geo = new THREE.CubeGeometry(1, 1, 1);
-// var duck_mat = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
-// var duck = new THREE.Mesh(duck_geo, duck_mat);
-// // duck.position.set(-5, 1, 5);
-// duck.castShadow = true;
-// // duck.rotation.y = degToRad(45);
-// scene.add(duck);
-
-// duck!
-// var loader = new THREE.OBJLoader();
-// var duck_geo, duck;
-// var duck_mat = new THREE.MeshBasicMaterial({
-//     color: 0xFFFF00
-// });
-// function addDuck (obj) {
-//     duck_geo = obj.children[0].geometry;
-//     duck = new THREE.Mesh(duck_geo, duck_mat);
-//     scene.add(duck);
-// }
-
-
-
 // Lights 
 var sunlight = new THREE.DirectionalLight(0xe0e0e0, 0.9);
 sunlight.position.set(20, 50, 0);
@@ -114,23 +91,25 @@ var quad_tree = new Node(0, 0, window.innerWidth, window.innerHeight);
 
 // Objects in scene
 var ball_radius = 0.5;
-var ball_geo = new THREE.IcosahedronGeometry(ball_radius, 3);
+var ball_geo = new THREE.IcosahedronGeometry(ball_radius, 1);
 var next_id = 0;
 
 function getBallMat (with_color) {
 
     var col = new THREE.Color();
-
+    var emissive_col = new THREE.Color();
     if (with_color != null) {
         col.setRGB(with_color.r, with_color.g, with_color.b);
+        emissive_col.setRGB(with_color.r * 0.5, with_color.g * 0.5, with_color.b * 0.5);
     } else {
         col.setHSL( 0.33 + (Math.random() * 0.2 - 0.1), 1, 0.5  + (Math.random() * 0.5 - 0.25));
     }
-    return new THREE.MeshBasicMaterial({ // MeshPhongMaterial({
+    return new THREE.MeshPhongMaterial({ // MeshBasicMaterial
         color: col,
+        emissive: emissive_col,
         specular: 0xa0a0a0,
         shininess: Math.random() * 10 + 2,
-        shading: THREE.SmoothShading // THREE.FlatShading
+        shading: THREE.FlatShading // THREE.SmoothShading // 
     });
 }
 
