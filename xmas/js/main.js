@@ -49,6 +49,21 @@ var trunk_verts = [
 trunk_geo.vertices = trunk_verts;
 trunk_geo.computeBoundingSphere();
 trunk_geo.verticesNeedUpdate = true;
+var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x202020 });
+var trunk = new THREE.Mesh(trunk_geo, trunk_mat);
+trunk.position.set(-5, 1, 5);
+trunk.castShadow = true;
+trunk.rotation.y = degToRad(45);
+scene.add(trunk);
+
+// star / duck / bird ?
+// var duck_geo = new THREE.CubeGeometry(1, 1, 1);
+// var duck_mat = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+// var duck = new THREE.Mesh(duck_geo, duck_mat);
+// // duck.position.set(-5, 1, 5);
+// duck.castShadow = true;
+// // duck.rotation.y = degToRad(45);
+// scene.add(duck);
 
 // duck!
 // var loader = new THREE.OBJLoader();
@@ -62,12 +77,7 @@ trunk_geo.verticesNeedUpdate = true;
 //     scene.add(duck);
 // }
 
-var trunk_mat = new THREE.MeshBasicMaterial({ color: 0x202020 });
-var trunk = new THREE.Mesh(trunk_geo, trunk_mat);
-trunk.position.set(-5, 1, 5);
-trunk.castShadow = true;
-trunk.rotation.y = degToRad(45);
-scene.add(trunk);
+
 
 // Lights 
 var sunlight = new THREE.DirectionalLight(0xe0e0e0, 0.9);
@@ -114,7 +124,7 @@ function getBallMat (with_color) {
     return new THREE.MeshPhongMaterial({
         color: col,
         specular: 0xa0a0a0,
-        shininess: 10, // Math.random() * 10,
+        shininess: Math.random() * 10 + 2,
         shading: THREE.SmoothShading // THREE.FlatShading
     });
 }
@@ -133,7 +143,7 @@ function getBall () {
     ball.scale.set(scale, scale, scale);
 
     var pos = has_layout ? layout[num].position : { x: 0, y: rand_scale, z: 0 };
-    ball.position.set(pos.x, rand_scale, pos.z);
+    ball.position.set(pos.x, rand_scale * 0.5, pos.z);
 
     var vel_mag = 0.05;
     ball.velocity = has_layout === false ? new THREE.Vector3(
@@ -232,7 +242,7 @@ function renderFrame () {
 
                     // override the "y" values
                     b.velocity.y = 0;
-                    b.position.y = b._props.scale;
+                    b.position.y = b._props.scale * 0.5;
                 }
             }
         }
