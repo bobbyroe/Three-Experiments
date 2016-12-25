@@ -15,19 +15,32 @@
 		}
 		#message {
 			position: absolute;
-			left: 100px;
-			top: 775px;
+			left: 5%;
+			bottom: 5%;
 			color: #aa9700;
 			font-size: 32px;
 			font-family: 'Slabo 27px', sans-serif;
 		}
 		#from {
 			position: absolute;
-			left: 600px;
-			top: 780px;
+			right: 5%;
+			bottom: 5%;
 			color: #aa9700;
 			font-size: 24px;
 			font-family: 'Slabo 27px', sans-serif;
+		}
+		/* iPhone 6 Portrait and Landscape */
+		@media only screen 
+			and (min-device-width: 320px) 
+			and (max-device-width: 640px) 
+			and (-webkit-min-device-pixel-ratio: 2) { 
+				#message {
+					font-size: 72px;
+				}
+				#from {
+					font-size: 64px;
+				}
+
 		}
 	</style> 
 </head> 
