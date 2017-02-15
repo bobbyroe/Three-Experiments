@@ -1,0 +1,72 @@
+@import elements
+
+//
+body
+    background-color: #000
+    font-size: 14px
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif
+    margin: 0
+    padding: 0
+    color: #e0e0e0
+
+canvas
+    width: 100% 
+    height: 100%
+    
+* 
+    +box-sizing()
+
+#title 
+    position: absolute
+    bottom: 10px
+    left: 10px
+    font-weight: bold
+    font-size: 48px
+    color: rgba(255, 255, 255, 0.2)
+a 
+    color: #0099FF
+    text-decoration: none
+    &:hover  
+        color: #00cCF0
+
+#info 
+    +transition(0.5s, cubic-bezier(0.23, 1, 0.32, 1))
+    position: absolute
+    padding: 20px
+    top: 0px
+    width: 300px
+    height: 100%
+    background-color: #404040
+    color: #a0a0a0
+
+    h4
+        color: #e0e0e0
+        font-weight: normal
+
+    &.closed 
+        left: -300px
+    &.open 
+        left: 0px
+
+#nub 
+    position: absolute
+    padding: 15px 10px 10px
+    right: -50px
+    top: 0
+    width: 50px
+    height: 50px
+    background-color: #606060
+    cursor: pointer
+    &:hover 
+        background-color: #404040
+        color: #00CCFF
+
+.panel
+    +transition(0.5s, cubic-bezier(0.23, 1, 0.32, 1))
+    position: absolute
+    top: 0
+    left: 0
+    width: 100%
+    height: 100%
+    &.scooched_right 
+        left: 300px

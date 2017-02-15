@@ -32,6 +32,8 @@
   scene.fog = new THREE.FogExp2(0x000000, 0.0025);
   renderer.setSize(w.innerWidth, w.innerHeight);
   document.body.appendChild(renderer.domElement);
+
+  // PARTICLES
   p_geo = new THREE.Geometry();
   p_mat = new THREE.ParticleBasicMaterial({
     size: 0.5,
@@ -79,7 +81,7 @@
       x: prev_pos.x,
       y: prev_pos.y,
       z: prev_pos.z,
-      length: (num_generations + 10) - generation,
+      length: (num_generations + 10) - generation, // min length = 4
       u: surface_pos.u,
       v: surface_pos.v
     };
@@ -99,8 +101,8 @@
 
       u = Math.max(Math.min(this.pos.u + Math.sin(counter) * this.pos.magnitude, 1), 0);
       v = Math.max(Math.min(this.pos.v + Math.cos(counter) * this.pos.magnitude, 1), 0);
-      theta = 2 * Math.PI * u;
-      phi = Math.acos(2 * v - 1);
+      theta = 2 * Math.PI * u; // between 0 and 2PI
+      phi = Math.acos(2 * v - 1); // between 0 and PI
       this.vertex.x = this.pos.x + (this.length * Math.sin(phi) * Math.cos(theta));
       this.vertex.y = this.pos.y + (this.length * Math.sin(phi) * Math.sin(theta));
       this.vertex.z = this.pos.z + (this.length * Math.cos(phi));
@@ -119,24 +121,27 @@
     };
     generation += 1;
     if (generation < num_generations) {
+
+      // 2 branches!
       new_pos = {
         prob: surface_pos.prob,
         magnitude: surface_pos.magnitude + 0.01,
         u: surface_pos.u + 0.01,
         v: surface_pos.v
       };
-      segment.children.push(getSegment(generation, verts, cols, new_pos, segment));
+      segment.children.push(getSegment(generation, verts, cols, new_pos, segment)); // recurse!
       new_pos = {
         prob: surface_pos.prob,
         magnitude: surface_pos.magnitude + 0.01,
         u: surface_pos.u - 0.01,
         v: surface_pos.v
       };
-      segment.children.push(getSegment(generation, verts, cols, new_pos, segment));
+      segment.children.push(getSegment(generation, verts, cols, new_pos, segment)); // recurse!
     }
     return segment;
   };
   getStem = function() {
+    // line
     var cols, line_geo, line_mat, pos, render, stem, verts;
 
     line_geo = new THREE.Geometry();
