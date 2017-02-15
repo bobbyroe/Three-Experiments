@@ -20,10 +20,6 @@ renderer.setClearColor(0xe0e0e0);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Misc. 
-
-var log = console.log.bind(console);
-
 // camera controls
 
 var controls = new THREE.TrackballControls(camera);
@@ -49,7 +45,7 @@ var wire_mat = new THREE.MeshBasicMaterial({
 
 // Ground plane
 
-var plane_geo = new THREE.PlaneGeometry(100, 100, 100);
+var plane_geo = new THREE.PlaneBufferGeometry(100, 100, 100);
 var basic_mat = new THREE.MeshBasicMaterial({
     color: 0xe0e0e0
 });
@@ -88,7 +84,7 @@ rimlight.position.set(0, 0.5, -1);
 
 // Quad tree
 var Node = (function() {
-    function Node (x, y, width, height, level) {
+    function _Node (x, y, width, height, level) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -100,7 +96,7 @@ var Node = (function() {
         this.sub_nodes = [];
     }
 
-    Node.prototype.add = function(obj) {
+    _Node.prototype.add = function(obj) {
         var index;
         if (this.sub_nodes.length !== 0) {
             index = this.getIndex(obj);
@@ -124,7 +120,7 @@ var Node = (function() {
         }
     };
 
-    Node.prototype.getIndex = function (obj) {
+    _Node.prototype.getIndex = function (obj) {
         var index = -1;
         var midpoint = {
             x: this.x + this.width * 0.5,
@@ -139,7 +135,7 @@ var Node = (function() {
         return index;
     };
 
-    Node.prototype.getNearbyObjs = function (obj) {
+    _Node.prototype.getNearbyObjs = function (obj) {
 
         var objs = this.objs.slice(0);
         var index = this.getIndex(obj);
@@ -149,26 +145,26 @@ var Node = (function() {
         return objs;
     };
 
-    Node.prototype.remove = function (obj) {
+    _Node.prototype.remove = function (obj) {
         var index = this.objs.indexOf(obj);
         if (index !== -1) {
             this.objs = this.objs.slice(0, index);
         }
     };
 
-    Node.prototype.split = function () {
+    _Node.prototype.split = function () {
         var half_width = this.width * 0.5;
         var half_height = this.height * 0.5;
         var level = this.level + 1;
         var x = this.x;
         var y = this.y;
-        this.sub_nodes[0] = new Node(x, y, half_width, half_height, level);
-        this.sub_nodes[1] = new Node(x + half_width, y, half_width, half_height, level);
-        this.sub_nodes[2] = new Node(x + half_width, y + half_height, half_width, half_height, level);
-        this.sub_nodes[3] = new Node(x, y + half_height, half_width, half_height, level);
+        this.sub_nodes[0] = new _Node(x, y, half_width, half_height, level);
+        this.sub_nodes[1] = new _Node(x + half_width, y, half_width, half_height, level);
+        this.sub_nodes[2] = new _Node(x + half_width, y + half_height, half_width, half_height, level);
+        this.sub_nodes[3] = new _Node(x, y + half_height, half_width, half_height, level);
     };
 
-    Node.prototype.clear = function () {
+    _Node.prototype.clear = function () {
         this.objs = [];
         if (this.sub_nodes.length !== 0) {
             var _ref = this.sub_nodes;
@@ -180,7 +176,7 @@ var Node = (function() {
         this.sub_nodes = [];
     };
 
-    return Node;
+    return _Node;
 
 })();
 
